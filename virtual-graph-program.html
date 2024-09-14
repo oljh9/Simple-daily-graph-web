@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>가상 그래프 프로그램</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+      @import url("https://cdn.jsdelivr.net/gh/wanteddev/wanted-sans@v1.0.1/packages/wanted-sans/fonts/webfonts/variable/split/WantedSansVariable.min.css");
+
+      * {
+        font-family: "Wanted Sans Variable", "Wanted Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+      }
+
+      :root {
+        --md-sys-color-primary: #6750A4;
+        --md-sys-color-on-primary: #FFFFFF;
+        --md-sys-color-primary-container: #EADDFF;
+        --md-sys-color-on-primary-container: #21005D;
+        --md-sys-color-secondary: #625B71;
+        --md-sys-color-on-secondary: #FFFFFF;
+        --md-sys-color-secondary-container: #E8DEF8;
+        --md-sys-color-on-secondary-container: #1D192B;
+        --md-sys-color-surface: #FFFBFE;
+        --md-sys-color-on-surface: #1C1B1F;
+        --md-sys-color-surface-variant: #E7E0EC;
+        --md-sys-color-on-surface-variant: #49454F;
+        --md-sys-color-outline: #79747E;
+        --md-sys-color-outline-variant: #CAC4D0;
+        --md-sys-color-error: #B3261E;
+        --md-sys-color-on-error: #FFFFFF;
+      }
+
+      body {
+        font-family: 'Roboto', sans-serif;
+        margin: 0;
+        padding: 0 0 80px 0;
+        background-color: var(--md-sys-color-surface);
+        color: var(--md-sys-color-on-surface);
+      }
+
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      .card {
+        background-color: var(--md-sys-color-surface);
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+        padding: 20px;
+        transition: box-shadow 0.3s;
+      }
+
+      .card:hover {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      }
+
+      .button {
+        background-color: var(--md-sys-color-primary);
+        color: var(--md-sys-color-on-primary);
+        border: none;
+        padding: 10px 20px;
+        border-radius: 20px;
+        cursor: pointer;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: background-color 0.3s;
+      }
+
+      .button:hover {
+        background-color: var(--md-sys-color-primary-container);
+        color: var(--md-sys-color-on-primary-container);
+      }
+
+      .text-field {
+        position: relative;
+        margin-bottom: 20px;
+      }
+
+      .text-field input {
+        width: calc(100% - 40px);
+        padding: 12px 16px;
+        border: 1px solid var(--md-sys-color-outline);
+        border-radius: 4px;
+        font-size: 16px;
+        background-color: var(--md-sys-color-surface);
+        color: var(--md-sys-color-on-surface);
+        transition: border-color 0.3s;
+      }
+
+      .text-field input:focus {
+        outline: none;
+        border-color: var(--md-sys-color-primary);
+      }
+
+      .text-field label {
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--md-sys-color-on-surface-variant);
+        transition: all 0.3s;
+        pointer-events: none;
+      }
+
+      .text-field input:focus+label,
+      .text-field input:not(:placeholder-shown)+label {
+        top: 0;
+        font-size: 12px;
+        background-color: var(--md-sys-color-surface);
+        padding: 0 4px;
+      }
+
+      .bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background-color: var(--md-sys-color-surface);
+        display: flex;
+        justify-content: space-around;
+        padding: 12px 0;
+        box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .bottom-nav a {
+        color: var(--md-sys-color-on-surface-variant);
+        text-decoration: none;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .bottom-nav a.active {
+        color: var(--md-sys-color-primary);
+      }
+
+      .bottom-nav .material-icons {
+        font-size: 24px;
+        margin-bottom: 4px;
+      }
+
+      .bottom-nav span {
+        font-size: 12px;
+      }
+
+      #chart-container {
+        display: none;
+      }
+
+      .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 34px;
+      }
+
+      .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: .4s;
+        border-radius: 34px;
+      }
+
+      .slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+      }
+
+      input:checked+.slider {
+        background-color: var(--md-sys-color-primary);
+      }
+
+      input:checked+.slider:before {
+        transform: translateX(26px);
+      }
+
+      .toggle-label {
+        margin-left: 10px;
+        vertical-align: super;
+      }
+
+      #myChart {
+        height: 1000px;
+      }
+
+      .collapsible {
+        cursor: pointer;
+        transition: all 0.3s ease;
+        overflow: hidden;
+      }
+
+      .collapsed .card-content {
+        max-height: 0;
+        visibility: hidden;
+        opacity: 0;
+      }
+
+      .expanded .card-content {
+        max-height: 500px;
+        visibility: visible;
+        opacity: 1;
+      }
+
+      .collapsible-icon {
+        float: right;
+        transition: transform 0.3s ease;
+      }
+
+      .expanded .collapsible-icon {
+        transform: rotate(180deg);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div id="main-section">
+        <div class="card collapsible collapsed" id="view-settings-card">
+          <h3 onclick="toggleCard('view-settings-card')">차트 보기 설정 <span class="material-icons collapsible-icon">expand_more</span>
+          </h3>
+          <div class="card-content">
+            <div class="text-field">
+              <input type="text" id="yearSelect" placeholder=" ">
+              <label for="yearSelect">연도</label>
+            </div>
+            <div class="text-field">
+              <input type="text" id="monthSelect" placeholder=" ">
+              <label for="monthSelect">월</label>
+            </div>
+            <button onclick="updateChart('lastWeek')" class="button">지난 1주 보기</button>
+            <button onclick="updateChart('month'); closeSettingsCard();" class="button">달 보기</button>
+            <button onclick="updateChart('year'); closeSettingsCard();" class="button">년 보기</button>
+            <button onclick="updateChart('lastYear'); closeSettingsCard();" class="button">지난 1년 보기</button>
+            <div class="text-field" style="margin-top: 30px">
+              <input type="date" id="customStartDate" placeholder=" ">
+              <label for="customStartDate">시작 날짜</label>
+            </div>
+            <div class="text-field">
+              <input type="date" id="customEndDate" placeholder=" ">
+              <label for="customEndDate">종료 날짜</label>
+            </div>
+            <button onclick="updateChart('custom'); closeSettingsCard();" class="button">맞춤 기간 보기</button>
+          </div>
+        </div>
+        <div id="chart-container" class="card">
+          <h3>월 차트</h3>
+          <canvas id="myChart"></canvas>
+          <div style="margin-top: 10px;">
+            <p>값 표시</p>
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggleValues" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+        <div class="card">
+          <h3>데이터 추가</h3>
+          <div class="text-field">
+            <input type="date" id="dateInput" placeholder=" ">
+            <label for="dateInput">날짜</label>
+          </div>
+          <div class="text-field">
+            <input type="number" id="valueInput" placeholder=" ">
+            <label for="valueInput">값</label>
+          </div>
+          <button onclick="insertData()" class="button">삽입</button>
+        </div>
+        <div class="card">
+          <h3>성장률 통계</h3>
+          <div class="text-field">
+            <input type="date" id="growthDateInput" placeholder=" ">
+            <label for="growthDateInput">기준 날짜</label>
+          </div>
+          <button onclick="calculateGrowth()" class="button">성장률 계산</button>
+          <p>전일 대비: <span id="dailyGrowth"></span>
+          </p>
+          <p>전달 대비: <span id="monthlyGrowth"></span>
+          </p>
+          <p>전년 대비: <span id="yearlyGrowth"></span>
+          </p>
+        </div>
+      </div>
+      <div id="data-management-section" style="display: none;">
+        <div class="card">
+          <h3>데이터 관리</h3>
+          <h5>해당 프로그램은 데이터베이스가 아닌 임시 저장소에 데이터를 저장하므로 수시로 백업할 것을 권장합니다.</h5>
+          <button onclick="downloadData()" class="button">백업 다운로드</button>
+          <div class="text-field" style="margin-top: 10px">
+            <!-- Hidden file input -->
+            <input type="file" id="fileInput" accept=".json" style="display: none;" onchange="handleFileSelect(event)">
+            <!-- Upload button triggers file input click -->
+            <button onclick="uploadData();" class="button">백업 데이터 가져오기</button>
+            <button onclick="resetData();" class="button">데이터 초기화</button>
+          </div>
+          <!-- Separate upload button, if needed -->
+          <!-- <button onclick="uploadData()" class="button">데이터 업로드</button> -->
+        </div>
+      </div>
+    </div>
+    <nav class="bottom-nav">
+      <a href="#" onclick="showMain()" id="main-nav">
+        <i class="material-icons">home</i>
+        <span>메인</span>
+      </a>
+      <a href="#" onclick="showDataManagement()" id="data-nav">
+        <i class="material-icons">storage</i>
+        <span>데이터 관리</span>
+      </a>
+    </nav>
+    <script>
+      let chartData = {};
+      let chart;
+      let showValues = true;
+
+      function initChart() {
+        const ctx = document.getElementById('myChart').getContext('2d');
+        chart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: [],
+            datasets: [{
+              label: '일일 값',
+              data: [],
+              borderColor: '#6750A4',
+              backgroundColor: '#EADDFF',
+              fill: false,
+              tension: 0.1,
+              spanGaps: true,
+            }]
+          },
+          options: {
+            responsive: true,
+            scales: {
+              y: {
+                beginAtZero: true
+              }
+            },
+            plugins: {
+              tooltip: {
+                enabled: true,
+                mode: 'index',
+                intersect: false
+              },
+              legend: {
+                display: false
+              }
+            },
+            hover: {
+              mode: 'index',
+              intersect: false
+            },
+            elements: {
+              point: {
+                radius: 2,
+                hoverRadius: 4
+              }
+            }
+          },
+          plugins: [{
+            afterDraw: chart => {
+              if (!showValues) return;
+              const ctx = chart.ctx;
+              ctx.save();
+              ctx.font = '10px Roboto';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'bottom';
+              ctx.fillStyle = '#1C1B1F';
+              chart.data.datasets.forEach((dataset, i) => {
+                const meta = chart.getDatasetMeta(i);
+                meta.data.forEach((bar, index) => {
+                  const data = dataset.data[index];
+                  if (data !== '') {
+                    ctx.fillText(data, bar.x, bar.y - 5);
+                  }
+                });
+              });
+              ctx.restore();
+            }
+          }]
+        });
+      }
+
+      function updateChart(view) {
+        const year = document.getElementById('yearSelect').value;
+        const month = document.getElementById('monthSelect').value;
+        let labels = [];
+        let data = [];
+        if (view === 'month') {
+          const daysInMonth = new Date(year, month, 0).getDate();
+          for (let i = 1; i <= daysInMonth; i++) {
+            const dateStr = `${year}-${month.padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+            labels.push(i);
+            data.push(chartData[dateStr] !== undefined ? chartData[dateStr] : ''); // Set empty string if undefined
+          }
+          document.querySelector('#chart-container h3').textContent = `${month}월 차트`;
+        } else if (view === 'year') {
+          const startDate = new Date(year, 0, 1); // January 1st
+          const endDate = new Date(year, 11, 31); // December 31st
+          let currentDate = startDate;
+          while (currentDate <= endDate) {
+            const dateStr = formatDate(currentDate);
+            labels.push(dateStr);
+            data.push(chartData[dateStr] !== undefined ? chartData[dateStr] : ''); // Set empty string if undefined
+            currentDate.setDate(currentDate.getDate() + 1); // Move to the next day
+          }
+          document.querySelector('#chart-container h3').textContent = `${year}년 차트`;
+        } else if (view === 'lastYear') {
+          const today = new Date();
+          const oneYearAgo = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate());
+          const startDate = new Date(oneYearAgo);
+          const endDate = new Date(today);
+          let currentDate = startDate;
+          while (currentDate <= endDate) {
+            const dateStr = formatDate(currentDate);
+            labels.push(dateStr);
+            data.push(chartData[dateStr] !== undefined ? chartData[dateStr] : ''); // Set empty string if undefined
+            currentDate.setDate(currentDate.getDate() + 1); // Move to the next day
+          }
+          document.querySelector('#chart-container h3').textContent = `${formatDate(oneYearAgo)} ~ ${formatDate(today)}`;
+        } else if (view === 'custom') {
+          const startDate = new Date(document.getElementById('customStartDate').value);
+          const endDate = new Date(document.getElementById('customEndDate').value);
+          let currentDate = startDate;
+          while (currentDate <= endDate) {
+            const dateStr = formatDate(currentDate);
+            labels.push(dateStr);
+            data.push(chartData[dateStr] !== undefined ? chartData[dateStr] : ''); // Set empty string if undefined
+            currentDate.setDate(currentDate.getDate() + 1); // Move to the next day
+          }
+          document.querySelector('#chart-container h3').textContent = `${formatDate(startDate)} ~ ${formatDate(endDate)}`;
+        } else if (view === 'lastWeek') {
+          closeSettingsCard();
+          const today = new Date();
+          const oneWeekAgo = new Date();
+          oneWeekAgo.setDate(today.getDate() - 7);
+          let currentDate = oneWeekAgo;
+          while (currentDate <= today) {
+            const dateStr = formatDate(currentDate);
+            labels.push(dateStr);
+            data.push(chartData[dateStr] !== undefined ? chartData[dateStr] : ''); // Set empty string if undefined
+            currentDate.setDate(currentDate.getDate() + 1); // Move to the next day
+          }
+          document.querySelector('#chart-container h3').textContent = `${formatDate(oneWeekAgo)} ~ ${formatDate(today)}`;
+        }
+        chart.data.labels = labels;
+        chart.data.datasets[0].data = data;
+        chart.update();
+        document.getElementById('chart-container').style.display = 'block';
+      }
+
+      function insertData() {
+        const date = document.getElementById('dateInput').value;
+        const value = parseFloat(document.getElementById('valueInput').value);
+        if (date && !isNaN(value)) {
+          chartData[date] = value;
+          localStorage.setItem('chartData', JSON.stringify(chartData));
+          updateChart('month');
+        }
+      }
+
+      function calculateGrowth() {
+        const baseDate = new Date(document.getElementById('growthDateInput').value);
+        const baseDateStr = formatDate(baseDate);
+        const baseValue = chartData[baseDateStr] || 0;
+        const yesterdayDate = new Date(baseDate);
+        yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+        const yesterdayValue = chartData[formatDate(yesterdayDate)] || 0;
+        const lastMonthDate = new Date(baseDate);
+        lastMonthDate.setMonth(lastMonthDate.getMonth() - 1);
+        const lastMonthValue = chartData[formatDate(lastMonthDate)] || 0;
+        const lastYearDate = new Date(baseDate);
+        lastYearDate.setFullYear(lastYearDate.getFullYear() - 1);
+        const lastYearValue = chartData[formatDate(lastYearDate)] || 0;
+        document.getElementById('dailyGrowth').textContent = calculateGrowthRate(yesterdayValue, baseValue);
+        document.getElementById('monthlyGrowth').textContent = calculateGrowthRate(lastMonthValue, baseValue);
+        document.getElementById('yearlyGrowth').textContent = calculateGrowthRate(lastYearValue, baseValue);
+      }
+
+      function calculateGrowthRate(oldValue, newValue) {
+        if (oldValue === 0) return '계산 불가';
+        const rate = ((newValue - oldValue) / oldValue) * 100;
+        return rate.toFixed(2) + '%';
+      }
+
+      function formatDate(date) {
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+      }
+
+      function downloadData() {
+        const dataStr = JSON.stringify(chartData);
+        const dataBlob = new Blob([dataStr], {
+          type: 'application/json'
+        });
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'chartData.json';
+        link.click();
+      }
+
+      function resetData() {
+          if (confirm('데이터를 초기화하시겠습니까?')) {
+            localStorage.setItem('chartData', '{}');
+            updateChart('month');
+            calculateGrowth();
+          }
+      }
+      function uploadData() {
+        // Create a hidden file input element
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = '.json';
+        fileInput.style.display = 'none';
+        // Append the file input to the body
+        document.body.appendChild(fileInput);
+        // Add event listener for file selection
+        fileInput.addEventListener('change', function(event) {
+          const file = event.target.files[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+              if (confirm('기존 데이터를 덮어쓰시겠습니까?')) {
+                try {
+                  chartData = JSON.parse(e.target.result);
+                  localStorage.setItem('chartData', JSON.stringify(chartData));
+                  updateChart('month');
+                  calculateGrowth();
+                  alert('데이터가 성공적으로 로드되었습니다.');
+                } catch (error) {
+                  alert('잘못된 JSON 형식입니다.');
+                }
+              }
+            };
+            reader.readAsText(file);
+          }
+          // Remove the file input element after use
+          document.body.removeChild(fileInput);
+        });
+        // Trigger the file input dialog
+        fileInput.click();
+      }
+
+      function showMain() {
+        document.getElementById('main-section').style.display = 'block';
+        document.getElementById('data-management-section').style.display = 'none';
+        document.getElementById('main-nav').classList.add('active');
+        document.getElementById('data-nav').classList.remove('active');
+      }
+
+      function showDataManagement() {
+        document.getElementById('main-section').style.display = 'none';
+        document.getElementById('data-management-section').style.display = 'block';
+        document.getElementById('main-nav').classList.remove('active');
+        document.getElementById('data-nav').classList.add('active');
+      }
+
+      function initializeApp() {
+        const canvas = document.getElementById('myChart');
+        canvas.height = 400; // Set height
+        const storedData = localStorage.getItem('chartData');
+        if (storedData) {
+          chartData = JSON.parse(storedData);
+        }
+        initChart();
+        const yearSelect = document.getElementById('yearSelect');
+        const monthSelect = document.getElementById('monthSelect');
+        const currentYear = new Date().getFullYear();
+        for (let i = currentYear - 5; i <= currentYear; i++) {
+          const option = document.createElement('option');
+          option.value = i;
+          option.textContent = i;
+          yearSelect.appendChild(option);
+        }
+        yearSelect.value = currentYear;
+        for (let i = 1; i <= 12; i++) {
+          const option = document.createElement('option');
+          option.value = i.toString().padStart(2, '0');
+          option.textContent = i;
+          monthSelect.appendChild(option);
+        }
+        monthSelect.value = (new Date().getMonth() + 1).toString().padStart(2, '0');
+        // Set the date input to today
+        const today = new Date().toISOString().slice(0, 10);
+        document.getElementById('dateInput').value = today;
+        // Set the default date for the growth calculation datepicker
+        document.getElementById('growthDateInput').value = today;
+        document.getElementById('toggleValues').addEventListener('change', function() {
+          showValues = this.checked;
+          chart.update();
+        });
+        updateChart('month');
+        calculateGrowth();
+      }
+
+      function toggleCard(cardId) {
+        const card = document.getElementById(cardId);
+        if (card.classList.contains('collapsed')) {
+          card.classList.remove('collapsed');
+          card.classList.add('expanded');
+        } else {
+          card.classList.remove('expanded');
+          card.classList.add('collapsed');
+        }
+      }
+      // 설정 변경 후 자동으로 카드 닫기
+      function closeSettingsCard() {
+        const card = document.getElementById('view-settings-card');
+        card.classList.remove('expanded');
+        card.classList.add('collapsed');
+      }
+      document.addEventListener('DOMContentLoaded', initializeApp);
+    </script>
+  </body>
+</html>
